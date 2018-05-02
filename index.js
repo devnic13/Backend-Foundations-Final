@@ -45,6 +45,8 @@ const User = sequelize.define('User', {
     timestamps: false
 })
 
+User.sync({force: true});
+
 /*const Post = sequelize.define('message', {
     id: {
         type: Sequelize.INTEGER,
@@ -90,30 +92,30 @@ passport.use(new LocalStrategy(function(username, password, done){
     })
 }));
 
-
-
 // API
-app.get('/home', (req, res) => {
-    res.render('home')
+app.get('/', (req, res) => {
+    res.render('signup')
 })
 
-app.get('/', (req, res) => {
-    res.render('register')
-})
+/*app.get('/home', (req, res) => {
+    if(!req.user) {
+        console.log('not authenticated')
+        res.redirect('/login')
+    } else {
+        console.log('authenticated')      
+	    res.render('home')        
+    }
+})*/
 
 app.get('/login', (req, res) => {
-    res.render('home')
+    res.render('login')
 })
 
-app.post('/login', passport.authenticate('local'), (req, res) => {
-    res.render('/register')
+app.get('/signup', (req, res) => {
+	res.render('signup')
 })
 
-app.get('/register', (req, res) => {
-    res.render('home')
-})
-
-app.post('/register', (req, res) => {
+app.post('/signup', (req, res) => {
     let salt = crypto.randomBytes(16).toString('hex');
     let passwordHash = crypto.pbkdf2Sync(req.body.password, salt, 1000, 64, 'sha1').toString('hex');
 
@@ -128,14 +130,18 @@ app.post('/register', (req, res) => {
     res.render('home')
 })
 
+app.post('/login', passport.authenticate('local'), (req, res) => {
+    res.render('/signup')
+})
 
-app.get('/message', (req, res) => {
+
+/*app.get('/message', (req, res) => {
 	res.render('message')
 })
 
 app.post('/message', (req, res) => {
 	res.render('message')
-})
+})*/
 
 //run server on port 8080
 app.listen(8080, () => {
