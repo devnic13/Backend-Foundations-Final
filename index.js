@@ -17,7 +17,7 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({
     extended: true
 }));
-
+ 
 // connect to db
 
 const sequelize = new Sequelize('database', 'username', 'password',  {
@@ -45,7 +45,7 @@ const User = sequelize.define('User', {
     timestamps: false
 })
 
-User.sync({force: true});
+
 
 /*const Post = sequelize.define('message', {
     id: {
@@ -65,10 +65,10 @@ User.sync({force: true});
     timestamps: true
 })*/
 
+User.sync({force: false});
 
 // auth config
 app.use(passport.initialize());
-
 
 passport.serializeUser(function(user, done){
     done(null, user);
@@ -80,40 +80,50 @@ passport.deserializeUser(function(obj, done){
 
 
 passport.use(new LocalStrategy(function(username, password, done){
-    User.findOne({ where: {username: username} }).then(user => {
-          
+    User.findOne({ where: {username: username} }).then(user => { 
+        let salt = crypto.randomBytes(16).toString('hex');
+        let passwordHash = crypto.pbkdf2Sync(password, user.salt, 1000, 64, 'sha1').toString('hex');
+
         if(!user){
-            return done (null, false, {message: "Invalid user"});
-        } else if(crypto.pbkdf2Sync(password, user.salt, 1000, 64, 'sha1').toString('hex') !== user.passwordHash) {
+            return done(null, false, {message: "Invalid user"});
+        } else if(passwordHash !== user.passwordHash) {
             return done(null, false, {message: 'Incorrect password'});
         } else {
-            return done (null, user);
+            return done(null, user);
         }
     })
 }));
+    
+app.use(function (err, req, res, next) {
+    console.error(err.stack)
+    res.status(500).send('Something broke!')
+}),
+
+
 
 // API
 app.get('/', (req, res) => {
     res.render('signup')
-})
+}),
 
-/*app.get('/home', (req, res) => {
-    if(!req.user) {
-        console.log('not authenticated')
-        res.redirect('/login')
-    } else {
-        console.log('authenticated')      
-	    res.render('home')        
-    }
-})*/
 
-app.get('/login', (req, res) => {
+app.get('/login', (req, res, next) => {
     res.render('login')
-})
+}),
 
-app.get('/signup', (req, res) => {
+app.post('/login', 
+  passport.authenticate('local', { failureRedirect: '/login' }),
+  function(req, res, next) {
+    res.redirect('/');
+}),
+
+app.get('/home', (req, res,next) => {
+    res.render('home')
+}),
+
+app.get('/signup', (req, res, next) => {
 	res.render('signup')
-})
+}),
 
 app.post('/signup', (req, res) => {
     let salt = crypto.randomBytes(16).toString('hex');
@@ -121,18 +131,15 @@ app.post('/signup', (req, res) => {
 
     User.create({
         
-        firstName: req.body.firstname,
+        firstName: req.body.firstName,
         lastName:  req.body.lastName,
         username: req.body.username,
         passwordHash: passwordHash,
         salt: salt
     })
     res.render('home')
-})
+}),
 
-app.post('/login', passport.authenticate('local'), (req, res) => {
-    res.render('/signup')
-})
 
 
 /*app.get('/message', (req, res) => {
@@ -145,4 +152,5 @@ app.post('/message', (req, res) => {
 
 //run server on port 8080
 app.listen(8080, () => {
-    console.log('server running')})
+    console.log('server running')}
+)
