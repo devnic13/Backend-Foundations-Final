@@ -29,16 +29,16 @@ const sequelize = new Sequelize('database', 'username', 'password',  {
 
 // define schema
 const User = sequelize.define('User', {
-    id: {
+    ID: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
-    firstName: Sequelize.STRING,
-    lastName: Sequelize.STRING,
-    username: Sequelize.STRING,
-    passwordHash: Sequelize.STRING,
-    salt: Sequelize.STRING
+        firstName: Sequelize.STRING,
+        lastName: Sequelize.STRING,
+        username: Sequelize.STRING,
+        passwordHash: Sequelize.STRING,
+        salt: Sequelize.STRING
 },
 {
     freezeTableName: true,
@@ -46,13 +46,12 @@ const User = sequelize.define('User', {
 })
 
 
-
-/*const Post = sequelize.define('message', {
-    id: {
+const Post = sequelize.define('message', {
+    ID: {
         type: Sequelize.INTEGER,
         
     },
-    authorId: {type: Sequelize.INTEGER,
+    authorID: {type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
@@ -63,9 +62,10 @@ const User = sequelize.define('User', {
 {
     freezeTableName: true,
     timestamps: true
-})*/
+})
 
 User.sync({force: false});
+Post.sync({force: false});
 
 // auth config
 app.use(passport.initialize());
@@ -114,7 +114,7 @@ app.get('/login', (req, res, next) => {
 app.post('/login', 
   passport.authenticate('local', { failureRedirect: '/login' }),
   function(req, res, next) {
-    res.redirect('/');
+    res.redirect('home');
 }),
 
 app.get('/home', (req, res,next) => {
@@ -141,14 +141,30 @@ app.post('/signup', (req, res) => {
 }),
 
 
-
-/*app.get('/message', (req, res) => {
+app.get('/message', (req, res) => {
 	res.render('message')
 })
 
 app.post('/message', (req, res) => {
-	res.render('message')
-})*/
+
+    Post.create({
+        
+        authorID: req.User,
+        message:  req.body.message,
+        timestamp: req.datetime-local   
+    })
+    if (err) throw err;
+    res.redirect(303, '/success');
+    res.render('post')
+}),
+
+app.get('/post', (req, res) => {
+	res.render('post')
+})
+
+app.post('/post', (req, res) => {
+	res.render('post')
+})
 
 //run server on port 8080
 app.listen(8080, () => {
