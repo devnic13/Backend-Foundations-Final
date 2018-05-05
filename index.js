@@ -6,6 +6,8 @@ const Sequelize = require('sequelize');
 const crypto = require('crypto');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
 const app = express();
 const router = express.Router();
 const handlebars = require("express-handlebars").create({ defaultLayout: 'main' });
@@ -17,6 +19,12 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+
+// session config
+app.use(cookieParser());
+app.use(session({ secret: 'anything' }));
+app.use(passport.initialize());
+app.use(passport.session());
  
 // connect to db
 
@@ -140,21 +148,23 @@ app.post('/signup', (req, res) => {
     res.render('home')
 }),
 
-
+// message API
 app.get('/message', (req, res) => {
-	res.render('message')
+	if(!req.user) {
+        console.log('not authenticated')
+        res.redirect('/login')
+    } else {
+        console.log('authenticated')      
+	    res.render('message')        
+    }
 })
 
 app.post('/message', (req, res) => {
-
     Post.create({
-        
-        authorID: req.User,
+        authorID: req.user.ID,
         message:  req.body.message,
-        timestamp: req.datetime-local   
+        timestamp: new Date()   
     })
-    if (err) throw err;
-    res.redirect(303, '/success');
     res.render('post')
 }),
 
